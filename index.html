@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Tracker — Keseharian Ku</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+  body { background:#0f172a; color:#e2e8f0; padding:20px; min-height:100vh; }
+  .container { max-width:900px; margin:0 auto; }
+  
+  h1 { font-size:1.8rem; margin-bottom:4px; background:linear-gradient(90deg,#38bdf8,#a78bfa); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  
+  .subtitle { color:#94a3b8; font-size:.9rem; margin-bottom:24px; }
+
+  .card { background:#1e293b; border-radius:16px; padding:20px; margin-bottom:20px; border:1px solid #334155; }
+  .card h2 { font-size:1.1rem; margin-bottom:16px; color:#38bdf8; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+  label { display:block; font-size:.8rem; color:#94a3b8; margin-bottom:6px; }
+  input, select, textarea {
+    width:100%; padding:10px; border-radius:8px; border:1px solid #334155;
+    background:#0f172a; color:#e2e8f0; font-size:.9rem;
+  }
+  input:focus, select:focus, textarea:focus { outline:2px solid #38bdf8; }
+  textarea { resize:vertical; min-height:70px; }
+
+  /* Style khusus untuk tombol waktu */
+  .time-box { display:flex; gap:10px; align-items:center; }
+  .time-box input { text-align:center; font-weight:bold; color:#38bdf8; }
+  .btn-time { padding:10px; font-size:0.8rem; background:#334155; color:#fff; white-space:nowrap; border-radius:8px; }
+  .btn-time:hover { background:#475569; transform:none; box-shadow:none; }
+  .btn-time.start { background:#22c55e; color:#0f172a; }
+  .btn-time.end { background:#ef4444; color:#fff; }
+
+  button {
+    padding:12px 24px; border:none; border-radius:10px; cursor:pointer;
+    font-weight:600; font-size:.95rem; transition:.2s;
+    background:linear-gradient(135deg,#38bdf8,#a78bfa); color:#0f172a;
+  }
+  button:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(56,189,248,.3); }
+  button.danger { background:#ef4444; color:#fff; padding:6px 12px; font-size:.8rem; }
+  button.danger:hover { box-shadow:0 8px 20px rgba(239,68,68,.3); }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat { background:#1e293b; border-radius:12px; padding:16px; text-align:center; border:1px solid #334155; }
+  .stat .num { font-size:1.6rem; font-weight:700; color:#38bdf8; }
+  .stat .lbl { font-size:.75rem; color:#94a3b8; margin-top:4px; }
+
+  .entry { background:#0f172a; border-radius:12px; padding:14px; margin-bottom:12px; border-left:3px solid #38bdf8; }
+  .entry .date { font-size:.75rem; color:#64748b; margin-bottom:8px; }
+  .entry .row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+  .tag { background:#1e293b; padding:4px 10px; border-radius:20px; font-size:.78rem; color:#cbd5e1; }
+  .tag.sleep { border:1px solid #6366f1; }
+  .tag.book { border:1px solid #22c55e; }
+  .tag.sport { border:1px solid #f59e0b; }
+  .note { font-size:.85rem; color:#cbd5e1; margin-top:8px; padding-top:8px; border-top:1px dashed #334155; }
+  .empty { text-align:center; color:#64748b; padding:30px; font-size:.9rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📔 Daily Tracker</h1>
+  <p class="subtitle">Catat keseharian mu: aktivitas, tidur, baca buku, olahraga</p>
+
+  <!-- STATISTIK -->
+  <div class="stats" id="stats"></div>
+
+  <!-- FORM INPUT -->
+  <div class="card">
+    <h2>➕ Tambah Catatan Hari Ini</h2>
+    <div class="grid">
+      <div>
+        <label>Tanggal</label>
+        <input type="date" id="date">
+      </div>
+      <div>
+        <label>Kegiatan Utama</label>
+        <input type="text" id="activity" placeholder="mis: Kuliah, kerja, belajar">
+      </div>
+      
+      <!-- BAGIAN JAM YANG DIPERBAIKI -->
+      <div>
+        <label>Jam Mulai</label>
+        <div class="time-box">
+          <input type="time" id="start">
+          <button class="btn-time start" onclick="setNow('start')">⏱️ Sekarang</button>
+        </div>
+      </div>
+      <div>
+        <label>Jam Selesai</label>
+        <div class="time-box">
+          <input type="time" id="end">
+          <button class="btn-time end" onclick="setNow('end')">⏹️ Selesai</button>
+        </div>
+      </div>
+      <!-- BATAS BAGIAN JAM -->
+
+      <div>
+        <label>😴 Tidur (jam)</label>
+        <input type="number" id="sleep" step="0.5" min="0" max="24" placeholder="mis: 7.5">
+      </div>
+      <div>
+        <label>📚 Baca Buku (jam)</label>
+        <input type="number" id="book" step="0.5" min="0" max="24" placeholder="mis: 1">
+      </div>
+      <div>
+        <label>🏃 Olahraga</label>
+        <select id="sport">
+          <option value="">— pilih —</option>
+          <option>Lari</option>
+          <option>Jalan santai</option>
+          <option>Gym / angkat beban</option>
+          <option>Bersepeda</option>
+          <option>Renang</option>
+          <option>Yoga</option>
+          <option>Badminton</option>
+          <option>Futsal / bola</option>
+          <option>Tidak olahraga</option>
+        </select>
+      </div>
+      <div>
+        <label>📚 Judul Buku (opsional)</label>
+        <input type="text" id="bookTitle" placeholder="mis: Atomic Habits">
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <label>💡 Insight / yang didapat (dari buku, olahraga, dll)</label>
+      <textarea id="insight" placeholder="mis: Dari buku Atomic Habits — habit kecil konsisten lebih powerful dari usaha besar sekali-sekali..."></textarea>
+    </div>
+    <div style="margin-top:14px">
+      <button onclick="addEntry()">💾 Simpan Catatan</button>
+    </div>
+  </div>
+
+  <!-- RIWAYAT -->
+  <div class="card">
+    <h2>📅 Riwayat Keseharian</h2>
+    <div id="history"></div>
+  </div>
+</div>
+
+<script>
+  const KEY = 'dailyTrackerData';
+
+  function loadData() {
+    return JSON.parse(localStorage.getItem(KEY) || '[]');
+  }
+  function saveData(data) {
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  // set tanggal hari ini
+  document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+  // Fungsi untuk mengisi jam otomatis saat ini
+  function setNow(targetId) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById(targetId).value = `${hours}:${minutes}`;
+  }
+
+  function addEntry() {
+    const entry = {
+      id: Date.now(),
+      date: document.getElementById('date').value,
+      activity: document.getElementById('activity').value.trim(),
+      start: document.getElementById('start').value,
+      end: document.getElementById('end').value,
+      sleep: parseFloat(document.getElementById('sleep').value) || 0,
+      book: parseFloat(document.getElementById('book').value) || 0,
+      sport: document.getElementById('sport').value,
+      bookTitle: document.getElementById('bookTitle').value.trim(),
+      insight: document.getElementById('insight').value.trim()
+    };
+
+    if (!entry.date) { alert('Tanggal wajib diisi!'); return; }
+
+    const data = loadData();
+    data.unshift(entry);
+    saveData(data);
+    render();
+
+    // reset form (kecuali tanggal)
+    ['activity','start','end','sleep','book','bookTitle','insight'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('sport').value = '';
+  }
+
+  function deleteEntry(id) {
+    if (!confirm('Hapus catatan ini?')) return;
+    const data = loadData().filter(e => e.id !== id);
+    saveData(data);
+    render();
+  }
+
+  function render() {
+    const data = loadData();
+
+    // statistik
+    const totalSleep = data.reduce((s,e) => s + e.sleep, 0);
+    const totalBook = data.reduce((s,e) => s + e.book, 0);
+    const totalSport = data.filter(e => e.sport && e.sport !== 'Tidak olahraga').length;
+    const avgSleep = data.length ? (totalSleep / data.length).toFixed(1) : 0;
+
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="num">${data.length}</div><div class="lbl">Hari Tercatat</div></div>
+      <div class="stat"><div class="num">${avgSleep}j</div><div class="lbl">Rata² Tidur</div></div>
+      <div class="stat"><div class="num">${totalBook}j</div><div class="lbl">Total Baca Buku</div></div>
+      <div class="stat"><div class="num">${totalSport}</div><div class="lbl">Hari Olahraga</div></div>
+    `;
+
+    // riwayat
+    const hist = document.getElementById('history');
+    if (!data.length) {
+      hist.innerHTML = '<div class="empty">Belum ada catatan. Yuk tambah hari ini! ✨</div>';
+      return;
+    }
+
+    hist.innerHTML = data.map(e => {
+      const durasi = (e.start && e.end) ? hitungDurasi(e.start, e.end) : '';
+      return `
+      <div class="entry">
+        <div class="date">📆 ${e.date} ${e.activity ? '• ' + e.activity : ''} ${durasi ? '• ⏰ ' + durasi : ''}</div>
+        <div class="row">
+          ${e.sleep ? `<span class="tag sleep">😴 Tidur ${e.sleep} jam</span>` : ''}
+          ${e.book ? `<span class="tag book">📚 Baca ${e.book} jam${e.bookTitle ? ' — ' + e.bookTitle : ''}</span>` : ''}
+          ${e.sport ? `<span class="tag sport">🏃 ${e.sport}</span>` : ''}
+        </div>
+        ${e.insight ? `<div class="note">💡 ${e.insight}</div>` : ''}
+        <div style="margin-top:10px"><button class="danger" onclick="deleteEntry(${e.id})">🗑 Hapus</button></div>
+      </div>`;
+    }).join('');
+  }
+
+  function hitungDurasi(start, end) {
+    const [h1,m1] = start.split(':').map(Number);
+    const [h2,m2] = end.split(':').map(Number);
+    let menit = (h2*60+m2) - (h1*60+m1);
+    if (menit < 0) menit += 24*60; // lewat tengah malam
+    const jam = Math.floor(menit/60);
+    const sisa = menit % 60;
+    return `${jam}j ${sisa}m`;
+  }
+
+  render();
+</script>
+</body>
+</html>
